@@ -15,8 +15,8 @@ const Rooms = () => {
   const fetchRoomsList = async () => {
     await fetch("http://localhost:3000/rooms")
       .then((res) => res.json())
-      .then((result) => {
-        setroomsList(result);
+      .then((data) => {
+        setroomsList(data);
       });
   };
 
@@ -79,6 +79,7 @@ const Rooms = () => {
               <td>{room.roomNumber}</td>
               <td>{room.price}</td>
               <td>
+                <button>add invoice</button>
                 <button
                   onClick={(e) => {
                     deleteRoom(e, room.id);
