@@ -1,3 +1,4 @@
+import { Card, Form, Input, Table, Col, Row, Button } from "antd";
 import { useEffect, useState } from "react";
 
 type Room = {
@@ -12,6 +13,10 @@ const Rooms = () => {
   const [number, setNumber] = useState("");
   const [price, setPrice] = useState(0);
 
+  useEffect(() => {
+    fetchRoomsList();
+  });
+
   const fetchRoomsList = async () => {
     await fetch("http://localhost:3000/rooms")
       .then((res) => res.json())
@@ -19,10 +24,6 @@ const Rooms = () => {
         setroomsList(data);
       });
   };
-
-  useEffect(() => {
-    fetchRoomsList();
-  });
 
   const handleSubmit = (event: any) => {
     event.preventDefault();
@@ -61,54 +62,55 @@ const Rooms = () => {
     setNumber("");
     setPrice(0);
   };
-  return (
-    <>
-      <p>number: {number}</p>
-      <p>price: {price}</p>
-      <table>
-        <tr>
-          <th>Id</th>
-          <th>Number</th>
-          <th>Price</th>
-          <th>control</th>
-        </tr>
-        {roomsList.map((room: Room, index) => {
-          return (
-            <tr key={index}>
-              <td>{room.id}</td>
-              <td>{room.roomNumber}</td>
-              <td>{room.price}</td>
-              <td>
-                <button>add invoice</button>
-                <button
-                  onClick={(e) => {
-                    deleteRoom(e, room.id);
-                  }}
-                >
-                  delete
-                </button>
-              </td>
-            </tr>
-          );
-        })}
-      </table>
-      <hr />
-      <div>
-        <label>number</label>
-        <input type="text" onChange={(e) => setNumber(e.target.value)} />
-      </div>
-      <div>
-        <label>price</label>
-        <input
-          type="number"
-          onChange={(e) => {
-            setPrice(e.target.valueAsNumber);
-          }}
-        />
-      </div>
 
-      <button onClick={(e) => handleSubmit(e)}>add</button>
-    </>
+  const columns = [
+    {
+      title: "Id",
+      dataIndex: "id",
+      key: "id",
+    },
+    {
+      title: "Number",
+      dataIndex: "roomNumber",
+      key: "roomNumber",
+    },
+    {
+      title: "Price",
+      dataIndex: "price",
+      key: "price",
+    },
+  ];
+  return (
+    <Row justify="center" gutter={16}>
+      <Col span={12}>
+        <Card title="Lists">
+          <Table dataSource={roomsList} columns={columns} />;
+        </Card>
+      </Col>
+      <Col span={12}>
+        <Card title="Form">
+          <Form.Item label="Number" required tooltip="This is a required field">
+            <Input
+              type="text"
+              placeholder="221B"
+              onChange={(e) => setNumber(e.target.value)}
+            />
+          </Form.Item>
+          <Form.Item label="Price" required tooltip="This is a required field">
+            <Input
+              type="number"
+              placeholder="500"
+              onChange={(e) => {
+                setPrice(e.target.valueAsNumber);
+              }}
+            />
+          </Form.Item>
+          <Button type="primary" onClick={(e) => handleSubmit(e)}>
+            Add
+          </Button>
+        </Card>
+      </Col>
+    </Row>
   );
 };
 
