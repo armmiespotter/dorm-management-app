@@ -1,192 +1,124 @@
-import { Card, Form, Input, Table, Col, Row, Button, Space } from "antd";
-import Column from "antd/es/table/Column";
-import React, { useEffect, useState } from "react";
+import { Card, Table, Col, Row, Button, Space } from "antd";
+import { ReactNode, useEffect, useState } from "react";
 import axios from "axios";
-
-type Room = {
-  id: number;
-  roomNumber: string;
-  price: number;
-  isActive: boolean;
-};
+import { Link } from "react-router-dom";
+import MainModal from "../components/modals/ModalContainer";
+import FormRoom from "../components/forms/FormRoom";
+import type { ColumnsType, ColumnType } from "antd/es/table";
+import type { Room } from "../utils/type";
 
 const Rooms = () => {
-  const [roomsList, setroomsList] = useState([]);
-  const [id, setId] = useState(0);
-  const [number, setNumber] = useState("");
-  const [price, setPrice] = useState(0);
-  const [action, setAction] = useState("create");
-
-  useEffect(() => {
-    fetchRoomsList();
+  const [dataSource, setDataSource] = useState([]);
+  const [dataColumn, setDataColumn] = useState<ColumnType<ColumnsType>[]>([]);
+  const [isModalActive, setIsModalAvtice] = useState(false);
+  const [modalFooter, setModalFooter] = useState<ReactNode>([]);
+  const [modalTitle, setModalTitle] = useState("TEST001");
+  const [formAction, setFormAction] = useState("");
+  const [formData, setFormData] = useState<Room>({
+    id: 0,
+    roomNumber: "",
+    price: 0,
+    isActive: true,
   });
 
-  const fetchRoomsList = async () => {
+  useEffect(() => {
+    fetchDataSource();
+  });
+
+  const fetchDataSource = async () => {
     await axios
       .get("http://localhost:3000/rooms")
-      .then(({ data: roomList }) => {
-        setroomsList(roomList);
+      .then(({ data: dataSource }) => {
+        setDataSource(dataSource);
       });
+    fetchDataColumn();
+  };
+  const fetchDataColumn = () => {
+    const dataColumn: ColumnType<ColumnsType>[] = [
+      {
+        title: "Id",
+        dataIndex: "id",
+        key: "id",
+      },
+      {
+        title: "Room Number",
+        dataIndex: "roomNumber",
+        key: "roomNumber",
+      },
+      {
+        title: "Price",
+        dataIndex: "price",
+        key: "price",
+      },
+      {
+        title: "Action",
+        key: "action",
+        render: (room: Room) => (
+          <Space size="middle">
+            <Link to={`/rooms/${room.id}`}>
+              <Button size="small">View</Button>
+            </Link>
+            <Button
+              size="small"
+              onClick={() => {
+                handleEditButton(room.id);
+              }}
+            >
+              Edit
+            </Button>
+            <Button size="small">Add Invoice</Button>
+            <Button size="small" danger>
+              Delete
+            </Button>
+          </Space>
+        ),
+      },
+    ];
+    setDataColumn(dataColumn);
   };
 
-  const handleSubmit = async (event: React.SyntheticEvent<HTMLElement>) => {
-    event.preventDefault();
-    await axios
-      .post("http://localhost:3000/rooms", {
-        roomNumber: number,
-        price: price,
-        isActive: true,
-      })
-      .then(() => {
-        resetState();
-      });
+  const handleSubmit = () => {};
+  const handleCancel = () => {
+    setIsModalAvtice(false);
   };
-
-  const handleUpdate = async (event: React.SyntheticEvent<HTMLElement>) => {
-    event.preventDefault();
-    if (id !== 0) {
-      await axios
-        .patch(`http://localhost:3000/rooms/${id}`, {
-          roomNumber: number,
-          price: price,
-          isActive: true,
-        })
-        .then(() => {
-          resetState();
-        });
-    }
+  const handleAddButton = () => {
+    setFormAction("create");
+    setModalTitle("CREATE");
+    setModalFooter([<Button>ADD</Button>]);
+    setIsModalAvtice(true);
+    console.log(formAction);
   };
-
-  const changeFormToUpdate = async (
-    event: React.SyntheticEvent<HTMLElement>,
-    roomId: number
-  ) => {
-    event.preventDefault();
-    await axios
-      .get(`http://localhost:3000/rooms/${roomId}`)
-      .then(({ data: room }) => {
-        resetState();
-        setId(room.id);
-        setNumber(room.roomNumber);
-        setPrice(room.price);
-        setAction("update");
-      });
+  const handleEditButton = (roomId: number) => {
+    setFormAction("update");
+    setModalTitle("UPDATE");
+    setModalFooter([<Button>Update</Button>]);
+    setIsModalAvtice(true);
+    console.log(formAction, roomId);
   };
-
-  const deleteRoom = async (
-    event: React.SyntheticEvent<HTMLElement>,
-    roomId: number
-  ) => {
-    event.preventDefault();
-    await axios.delete(`http://localhost:3000/rooms/${roomId}`).then(() => {
-      resetState();
-    });
-  };
-
-  const resetState = () => {
-    setId(0);
-    setNumber("");
-    setPrice(0);
-  };
-
   return (
-    <Row justify="center" gutter={16}>
-      <Col span={12}>
-        <Card title="Lists">
-          <Table dataSource={roomsList}>
-            <Column title="Id" dataIndex="id" key="id" />
-            <Column title="Number" dataIndex="roomNumber" key="roomNumber" />
-            <Column title="Price" dataIndex="price" key="price" />
-            <Column
-              title="Action"
-              key="action"
-              render={(room: Room) => (
-                <Space size="middle">
-                  <Button
-                    onClick={(event) => {
-                      changeFormToUpdate(event, room.id);
-                    }}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    onClick={(event) => {
-                      deleteRoom(event, room.id);
-                    }}
-                  >
-                    Delete
-                  </Button>
-                </Space>
-              )}
-            />
-          </Table>
-        </Card>
-      </Col>
-      <Col span={12}>
-        {action === "create" ? (
-          <Card title="Form Create">
-            <Form layout="vertical">
-              <Form.Item label="Number">
-                <Input
-                  type="text"
-                  placeholder="221B"
-                  value={number}
-                  onChange={(e) => setNumber(e.target.value)}
-                />
-              </Form.Item>
-              <Form.Item label="Price">
-                <Input
-                  type="number"
-                  placeholder="500"
-                  value={price}
-                  onChange={(e) => {
-                    setPrice(e.target.valueAsNumber);
-                  }}
-                />
-              </Form.Item>
-              <Button type="primary" onClick={(event) => handleSubmit(event)}>
+    <>
+      <Row justify="center">
+        <Col span={24}>
+          <Card title="Lists">
+            <Space style={{ marginBottom: 16 }}>
+              <Button type="primary" onClick={handleAddButton}>
                 Add
               </Button>
-            </Form>
+            </Space>
+            <Table dataSource={dataSource} columns={dataColumn} />
           </Card>
-        ) : (
-          <Card title="Form Update">
-            <Form layout="vertical">
-              <Form.Item label="Number">
-                <Input
-                  type="text"
-                  placeholder="221B"
-                  value={number}
-                  onChange={(e) => setNumber(e.target.value)}
-                />
-              </Form.Item>
-              <Form.Item label="Price">
-                <Input
-                  type="number"
-                  placeholder="500"
-                  value={price}
-                  onChange={(e) => {
-                    setPrice(e.target.valueAsNumber);
-                  }}
-                />
-              </Form.Item>
-              <Space size="middle">
-                <Button type="primary" onClick={(event) => handleUpdate(event)}>
-                  Update
-                </Button>
-                <Button
-                  onClick={() => {
-                    setAction("create");
-                  }}
-                >
-                  Cancel
-                </Button>
-              </Space>
-            </Form>
-          </Card>
-        )}
-      </Col>
-    </Row>
+        </Col>
+      </Row>
+      <MainModal
+        title={modalTitle}
+        isModalOpen={isModalActive}
+        handleSubmit={handleSubmit}
+        handleCancel={handleCancel}
+        modalFooter={modalFooter}
+      >
+        <FormRoom formAction={formAction} formData={formData}></FormRoom>
+      </MainModal>
+    </>
   );
 };
 

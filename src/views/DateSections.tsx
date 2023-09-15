@@ -17,7 +17,7 @@ const DateSections = () => {
 
   const getDateSectionsLists = async () => {
     await axios
-      .get("http://localhost:3000/date-sections")
+      .get(`http://localhost:3000/date-sections`)
       .then((res) => setDateSectionLists(res.data));
   };
 
