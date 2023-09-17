@@ -1,123 +1,100 @@
-import { Card, Table, Col, Row, Button, Space } from "antd";
-import { ReactNode, useEffect, useState } from "react";
+import { Card, Col, Row, Button, Space, Modal, Table } from "antd";
+import { FaRegTrashCan, FaPencil } from "react-icons/fa6";
+import { useEffect, useState } from "react";
 import axios from "axios";
-import { Link } from "react-router-dom";
-import MainModal from "../components/modals/ModalContainer";
+import { RoomAction } from "../utils/enum";
+import { Room } from "../utils/type";
 import FormRoom from "../components/forms/FormRoom";
-import type { ColumnsType, ColumnType } from "antd/es/table";
-import type { Room } from "../utils/type";
-
 const Rooms = () => {
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalAction, setModalAction] = useState("");
   const [dataSource, setDataSource] = useState([]);
-  const [dataColumn, setDataColumn] = useState<ColumnType<ColumnsType>[]>([]);
-  const [isModalActive, setIsModalAvtice] = useState(false);
-  const [modalFooter, setModalFooter] = useState<ReactNode>([]);
-  const [modalTitle, setModalTitle] = useState("TEST001");
-  const [formAction, setFormAction] = useState("");
-  const [formData, setFormData] = useState<Room>({
-    id: 0,
-    roomNumber: "",
-    price: 0,
-    isActive: true,
-  });
-
-  useEffect(() => {
-    fetchDataSource();
-  });
+  const [currentItem, setCurrentItem] = useState<Room>();
 
   const fetchDataSource = async () => {
     await axios
-      .get("http://localhost:3000/rooms")
+      .get(`${import.meta.env.VITE_API_PATH}/rooms`)
       .then(({ data: dataSource }) => {
         setDataSource(dataSource);
       });
-    fetchDataColumn();
-  };
-  const fetchDataColumn = () => {
-    const dataColumn: ColumnType<ColumnsType>[] = [
-      {
-        title: "Id",
-        dataIndex: "id",
-        key: "id",
-      },
-      {
-        title: "Room Number",
-        dataIndex: "roomNumber",
-        key: "roomNumber",
-      },
-      {
-        title: "Price",
-        dataIndex: "price",
-        key: "price",
-      },
-      {
-        title: "Action",
-        key: "action",
-        render: (room: Room) => (
-          <Space size="middle">
-            <Link to={`/rooms/${room.id}`}>
-              <Button size="small">View</Button>
-            </Link>
-            <Button
-              size="small"
-              onClick={() => {
-                handleEditButton(room.id);
-              }}
-            >
-              Edit
-            </Button>
-            <Button size="small">Add Invoice</Button>
-            <Button size="small" danger>
-              Delete
-            </Button>
-          </Space>
-        ),
-      },
-    ];
-    setDataColumn(dataColumn);
   };
 
-  const handleSubmit = () => {};
-  const handleCancel = () => {
-    setIsModalAvtice(false);
+  useEffect(() => {
+    fetchDataSource();
+  }, []);
+
+  const openCreateModal = async () => {
+    setModalTitle("Create");
+    setModalAction(RoomAction.Create);
+    setIsModalOpen(true);
   };
-  const handleAddButton = () => {
-    setFormAction("create");
-    setModalTitle("CREATE");
-    setModalFooter([<Button>ADD</Button>]);
-    setIsModalAvtice(true);
-    console.log(formAction);
+
+  const editItem = (room: Room) => {
+    setModalTitle("Update");
+    setModalAction(RoomAction.Update);
+    setIsModalOpen(true);
+    setCurrentItem(room);
   };
-  const handleEditButton = (roomId: number) => {
-    setFormAction("update");
-    setModalTitle("UPDATE");
-    setModalFooter([<Button>Update</Button>]);
-    setIsModalAvtice(true);
-    console.log(formAction, roomId);
+
+  const handleClose = () => {
+    setIsModalOpen(false);
   };
+
   return (
     <>
       <Row justify="center">
         <Col span={24}>
           <Card title="Lists">
             <Space style={{ marginBottom: 16 }}>
-              <Button type="primary" onClick={handleAddButton}>
-                Add
+              <Button type="primary" onClick={openCreateModal}>
+                Create Room
               </Button>
             </Space>
-            <Table dataSource={dataSource} columns={dataColumn} />
+            <Table dataSource={dataSource}>
+              <Table.Column key="id" title="Id" dataIndex="id" />
+              <Table.Column
+                key="roomNumber"
+                title="Room Number"
+                dataIndex="roomNumber"
+              />
+              <Table.Column key="price" title="Price" dataIndex="price" />
+              <Table.Column
+                title="Action"
+                key="action"
+                render={(room: Room) => (
+                  <Space>
+                    <Button
+                      onClick={() => {
+                        editItem(room);
+                      }}
+                    >
+                      <FaPencil />
+                    </Button>
+                    <Button>
+                      <FaRegTrashCan />
+                    </Button>
+                  </Space>
+                )}
+              />
+            </Table>
           </Card>
         </Col>
       </Row>
-      <MainModal
+      <Modal
         title={modalTitle}
-        isModalOpen={isModalActive}
-        handleSubmit={handleSubmit}
-        handleCancel={handleCancel}
-        modalFooter={modalFooter}
+        open={isModalOpen}
+        onCancel={() => {
+          setIsModalOpen(false);
+        }}
+        footer={null}
       >
-        <FormRoom formAction={formAction} formData={formData}></FormRoom>
-      </MainModal>
+        <FormRoom
+          formAction={modalAction}
+          formData={currentItem}
+          emitClose={handleClose}
+        ></FormRoom>
+      </Modal>
     </>
   );
 };
